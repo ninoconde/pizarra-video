@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pizarra">
+<meta name="robots" content="noindex">
+<title>Pizarra de Vídeo Nino Conde</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+body{margin:0}
+[hidden]{display:none!important}
+:root {
+  --bg: #f3f1ee; --surface: #ffffff; --surface-2: #ebe7e2; --line: #d8d1c9;
+  --fg: #1d1a17; --muted: #6e655c; --accent: #d9530f; --accent-ink: #ffffff;
+  --court: #1a2433; --ok: #0f8a5f; --bad: #c62f2f; --off: #2d62c8; --def: #7442c4;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --radius: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14110f; --surface: #1e1a17; --surface-2: #2a2521; --line: #3a332d;
+    --fg: #f2ede7; --muted: #a89d92; --accent: #f06a24; --accent-ink: #1a0d05;
+    --court: #0b0f16; --ok: #2fbf86; --bad: #f05a5a; --off: #6b9bff; --def: #a782ff;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: max(16px, env(safe-area-inset-top, 0px));
+  padding-bottom: max(32px, env(safe-area-inset-bottom, 0px));
+}
+.wrap { max-width: 1320px; margin: 0 auto; display: grid; gap: 16px; }
+header.top { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: end; justify-content: space-between; border-bottom: 3px solid var(--accent); padding-bottom: 12px; }
+.brand h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.7rem, 4vw, 2.4rem); letter-spacing: .01em; line-height: 1; margin: 0; text-transform: uppercase; }
+.brand p { margin: 4px 0 0; color: var(--muted); font-size: .85rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; }
+.match { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.match label { font-size: .75rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+input[type=text], select { font: inherit; font-size: .9rem; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; min-width: 0; }
+input[type=text]:focus-visible, select:focus-visible, button:focus-visible, .filebtn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 1000px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.panel h2 { margin: 0; font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; letter-spacing: .04em; text-transform: uppercase; display: flex; align-items: baseline; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
+.panel h2 small { font-family: var(--font-body); font-size: .78rem; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.stage { position: relative; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; background: var(--court); border-radius: 6px; overflow: hidden; }
+.stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.stage.viewing canvas { pointer-events: none; }
+.cut-label { position: absolute; left: 10px; top: 10px; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 20px); pointer-events: none; }
+.cut-label span { background: rgba(10,14,20,.8); color: #fff; font-family: var(--font-display); font-weight: 700; font-size: clamp(.8rem, 2vw, 1.05rem); letter-spacing: .03em; padding: 4px 10px; border-radius: 4px; border-left: 4px solid var(--c); }
+.marks-track { position: relative; height: 10px; margin: 0 60px; }
+.marks-track i { position: absolute; top: 0; width: 4px; height: 10px; border-radius: 2px; transform: translateX(-2px); }
+.stage .seal { position: absolute; right: 10px; bottom: 10px; pointer-events: none; background: rgba(10, 14, 20, .72); color: #fff; border-left: 3px solid #f06a24; font-family: var(--font-display); font-weight: 700; letter-spacing: .06em; font-size: .78rem; padding: 3px 8px; border-radius: 3px; text-transform: uppercase; }
+.empty-stage { position: absolute; inset: 0; display: grid; place-content: center; gap: 10px; text-align: center; padding: 16px; color: #e9e4de;
+  background: linear-gradient(transparent 49.6%, rgba(255,255,255,.14) 49.6% 50.4%, transparent 50.4%), radial-gradient(circle at 50% 50%, transparent 0 13%, rgba(255,255,255,.14) 13% 13.6%, transparent 13.6%); }
+.empty-stage strong { font-family: var(--font-display); font-size: 1.5rem; text-transform: uppercase; letter-spacing: .04em; }
+.empty-stage span { font-size: .88rem; color: #bdb4aa; max-width: 40ch; }
+.transport { display: grid; gap: 8px; }
+.scrub { display: flex; gap: 10px; align-items: center; }
+.scrub input[type=range] { flex: 1; min-width: 0; accent-color: var(--accent); height: 28px; }
+.tc { font-family: var(--font-mono); font-size: .85rem; font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.sep { width: 1px; align-self: stretch; background: var(--line); margin: 0 4px; }
+button, .filebtn { font: inherit; font-size: .86rem; font-weight: 600; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 8px 11px; min-height: 44px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; touch-action: manipulation; }
+button:hover, .filebtn:hover { border-color: var(--muted); }
+button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.primary, .filebtn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.filebtn { position: relative; }
+.filebtn input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.swatch { width: 34px; height: 34px; padding: 0; min-height: 0; border-radius: 50%; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--fg); background: inherit; }
+.hint { font-size: .8rem; color: var(--muted); margin: 0; }
+kbd { font-family: var(--font-mono); font-size: .75rem; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--surface-2); }
+.marks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.marks button { justify-content: space-between; }
+.marks .tc { color: inherit; }
+.tag-group { display: grid; gap: 6px; }
+.tag-group h3 { margin: 0; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.tags { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.tag { justify-content: flex-start; text-align: left; line-height: 1.2; font-size: .86rem; border-left: 5px solid var(--c); background: var(--surface-2); min-height: 52px; }
+.who { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+.cuts { overflow-x: auto; max-height: 420px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: .84rem; min-width: 520px; }
+th { position: sticky; top: 0; background: var(--surface-2); text-align: left; font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 8px; font-weight: 600; }
+td { padding: 8px; border-top: 1px solid var(--line); vertical-align: top; }
+td.time { font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.cut { cursor: pointer; }
+.chip { display: inline-block; font-size: .72rem; font-weight: 600; padding: 2px 7px; border-radius: 999px; color: #fff; background: var(--c); white-space: nowrap; }
+.del { min-height: 36px; padding: 4px 10px; font-size: .78rem; background: transparent; }
+.del.confirm { background: var(--bad); color: #fff; border-color: var(--bad); }
+.empty-cuts { padding: 22px 14px; color: var(--muted); font-size: .88rem; text-align: center; }
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.stat { border: 1px solid var(--line); border-radius: 6px; padding: 10px; display: grid; gap: 4px; }
+.stat b { font-family: var(--font-display); font-size: 1.8rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat span { font-size: .75rem; color: var(--muted); }
+.bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.status { font-size: .8rem; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 6px; font-size: .9rem; font-weight: 500; max-width: calc(100% - 32px); z-index: 20; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Pizarra de vídeo</h1>
+      <p>Nino Conde · Producciones Karma Invertido</p>
+    </div>
+    <div class="match">
+      <label for="partido">Partido</label>
+      <input type="text" id="partido" placeholder="J6 · Pozuelo vs Estudiantes B" style="width: 260px; max-width: 100%;">
+      <label class="filebtn primary" for="videoFile">Cargar vídeo<input type="file" id="videoFile" accept="video/*"></label>
+    </div>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="h-visor">
+      <h2 id="h-visor">Visor y pizarra <small id="videoName">El vídeo no sale de tu dispositivo</small></h2>
+      <div class="stage" id="stage">
+        <video id="video" playsinline preload="metadata"></video>
+        <canvas id="canvas" aria-label="Pizarra sobre el vídeo"></canvas>
+        <div class="empty-stage" id="emptyStage">
+          <strong>Carga el vídeo del partido</strong>
+          <span>MP4 o MOV del Mac, o de Archivos y Fotos del iPad. El vídeo nunca sale de tu dispositivo.</span>
+        </div>
+        <div class="cut-label" id="cutLabel"></div>
+        <div class="seal">Nino Conde | Producciones Karma Invertido</div>
+      </div>
+      <div class="transport">
+        <div class="scrub">
+          <span class="tc" id="tCur">00:00</span>
+          <input type="range" id="seek" min="0" max="0" step="0.01" value="0" aria-label="Posición del vídeo">
+          <span class="tc" id="tDur">00:00</span>
+        </div>
+        <div class="marks-track" id="marksTrack" aria-hidden="true"></div>
+        <div class="row">
+          <button id="bPlay" class="primary">▶ Play</button>
+          <button data-skip="-5">−5 s</button>
+          <button data-skip="-0.0333">◀ fot.</button>
+          <button data-skip="0.0333">fot. ▶</button>
+          <button data-skip="5">+5 s</button>
+          <span class="sep"></span>
+          <label for="speed" class="hint">Velocidad</label>
+          <select id="speed">
+            <option value="0.25">0,25×</option>
+            <option value="0.5">0,5×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.5">1,5×</option>
+            <option value="2">2×</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" role="toolbar" aria-label="Herramientas de dibujo">
+        <button data-tool="none" aria-pressed="false">Ver</button>
+        <button data-tool="ring" aria-pressed="true">◯ Aro</button>
+        <button data-tool="arrow" aria-pressed="false">↗ Flecha</button>
+        <button data-tool="line" aria-pressed="false">┄ Línea</button>
+        <button data-tool="free" aria-pressed="false">✎ Libre</button>
+        <span class="sep"></span>
+        <button class="swatch" data-color="#10b981" style="background:#10b981" aria-pressed="true" aria-label="Verde"></button>
+        <button class="swatch" data-color="#ef4444" style="background:#ef4444" aria-pressed="false" aria-label="Rojo"></button>
+        <button class="swatch" data-color="#f59e0b" style="background:#f59e0b" aria-pressed="false" aria-label="Dorado"></button>
+        <button class="swatch" data-color="#38bdf8" style="background:#38bdf8" aria-pressed="false" aria-label="Azul"></button>
+        <span class="sep"></span>
+        <button id="bUndo">↶ Deshacer</button>
+        <button id="bClear">Borrar dibujos</button>
+        <button id="bShot" class="primary">Guardar fotograma</button>
+      </div>
+      <p class="hint">Al empezar a dibujar el vídeo se pausa. Verde = acierto · Rojo = error · Dorado = clave · Azul = movimiento. En el Mac: <kbd>Espacio</kbd> play, <kbd>←</kbd><kbd>→</kbd> 5 s, <kbd>,</kbd><kbd>.</kbd> fotograma, <kbd>I</kbd><kbd>O</kbd> entrada y salida.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="h-tag">
+      <h2 id="h-tag">Etiquetar jugada <small>Corte: 6 s antes y 4 s después</small></h2>
+      <div class="who">
+        <input type="text" id="who" placeholder="Dorsal (#10)" aria-label="Jugadora">
+        <select id="quinteto" aria-label="Quinteto">
+          <option>Quinteto 1</option><option>Quinteto 2</option><option>Quinteto 3</option><option>Equipo</option>
+        </select>
+      </div>
+      <div class="marks">
+        <button id="bIn">Entrada <span class="tc" id="mIn">—</span></button>
+        <button id="bOut">Salida <span class="tc" id="mOut">—</span></button>
+      </div>
+      <div id="tagGroups" style="display:grid;gap:14px"></div>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="h-cuts">
+    <h2 id="h-cuts">Cortes <small class="status"><span class="dot"></span><span>Guardado en este dispositivo</span></small></h2>
+    <div class="row">
+      <label for="filtro" class="hint">Mostrar</label>
+      <select id="filtro"><option value="">Todos los partidos</option></select>
+      <span class="sep"></span>
+      <button id="bCsv">Exportar CSV</button>
+      <button id="bFfmpeg">Exportar órdenes ffmpeg</button>
+      <span class="sep"></span>
+      <button id="bBackup">Guardar copia de los cortes</button>
+      <label class="filebtn" for="restoreFile">Cargar copia<input type="file" id="restoreFile" accept=".json,application/json"></label>
+    </div>
+    <div class="cuts">
+      <table>
+        <thead><tr><th>Entrada – Salida</th><th>Tipo</th><th>Jugadora / quinteto</th><th>Detalle</th><th>Partido</th><th></th></tr></thead>
+        <tbody id="cutsBody"></tbody>
+      </table>
+      <div class="empty-cuts" id="emptyCuts">Todavía no hay cortes. Carga un vídeo y pulsa una etiqueta en el momento de la jugada; el corte aparece aquí y al tocarlo saltas a ese momento.</div>
+    </div>
+    <h2>Resumen <small>Calculado con las etiquetas de los cortes que se muestran</small></h2>
+    <div class="summary" id="summary"></div>
+  </section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  const TAGS = [
+    { group: "Técnica individual y trabajo invisible", items: [
+      { cat: "Individual +", key: "boteDer", label: "Anota tras bote derecha", c: "var(--ok)" },
+      { cat: "Individual +", key: "boteIzq", label: "Anota tras bote izquierda", c: "var(--ok)" },
+      { cat: "Individual +", key: "paso0", label: "Ventaja paso 0 / frenada", c: "var(--ok)" },
+      { cat: "Invisible +", key: "boxOk", label: "Box out correcto", c: "var(--ok)" },
+      { cat: "Invisible +", key: "defOk", label: "Punteo, tapón o apoyos", c: "var(--ok)" },
+      { cat: "A mejorar", key: "pasos", label: "Pasos / pérdida en bote", c: "var(--bad)" },
+      { cat: "A mejorar", key: "boxNo", label: "Olvida el box out", c: "var(--bad)" },
+      { cat: "A mejorar", key: "closeout", label: "Mal closeout / rompe línea", c: "var(--bad)" },
+    ]},
+    { group: "Táctica colectiva", items: [
+      { cat: "Ataque", key: "cincoAbierto", label: "5 abierto: inversión y corte", c: "var(--off)" },
+      { cat: "Ataque", key: "pnr", label: "Bloqueo directo: lectura", c: "var(--off)" },
+      { cat: "Ataque", key: "transicion", label: "Transición / contraataque", c: "var(--off)" },
+      { cat: "Ataque", key: "balonParado", label: "Saque de fondo o banda", c: "var(--off)" },
+      { cat: "Defensa", key: "presion", label: "Presión / 2c1 en banda", c: "var(--def)" },
+      { cat: "Defensa", key: "defPnr", label: "Defensa del PnR", c: "var(--def)" },
+      { cat: "Defensa", key: "zona", label: "Defensa en zona", c: "var(--def)" },
+      { cat: "Defensa", key: "ayudas", label: "Ayudas y rotaciones", c: "var(--def)" },
+    ]},
+  ];
+  const CAT_COLOR = { "Individual +": "var(--ok)", "Invisible +": "var(--ok)", "A mejorar": "var(--bad)", "Ataque": "var(--off)", "Defensa": "var(--def)" };
+  const $ = id => document.getElementById(id);
+  const video = $("video"), canvas = $("canvas"), ctx = canvas.getContext("2d"), stage = $("stage");
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+  const LOCAL_KEY = "cortes_local_v1";
+  let cuts = store.get(LOCAL_KEY, []);
+
+  const fmt = s => { s = Math.max(0, s || 0); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = Math.floor(s % 60); const mm = String(m).padStart(2, "0"), ss = String(sec).padStart(2, "0"); return h ? `${h}:${mm}:${ss}` : `${mm}:${ss}`; };
+  let toastTimer;
+  const toast = msg => { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 2600); };
+  const slug = s => (s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^A-Za-z0-9]+/g, "_").replace(/^_|_$/g, "") || "x";
+  function saveFile(filename, data) {
+    const blob = data instanceof Blob ? data : new Blob([data], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = filename;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast("Archivo guardado en Descargas.");
+  }
+  const visibleCuts = () => { const f = $("filtro").value; return cuts.filter(c => !f || c.partido === f).sort((a, b) => a.tIn - b.tIn); };
+
+  // ---------- Vídeo ----------
+  let hasVideo = false;
+  $("videoFile").addEventListener("change", e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (video.src) URL.revokeObjectURL(video.src);
+    video.src = URL.createObjectURL(f);
+    $("videoName").textContent = f.name;
+    hasVideo = true;
+    $("emptyStage").hidden = true;
+    shapes = []; redraw();
+  });
+  video.addEventListener("loadedmetadata", () => {
+    if (video.videoWidth && video.videoHeight) stage.style.aspectRatio = `${video.videoWidth} / ${video.videoHeight}`;
+    $("seek").max = video.duration || 0;
+    $("tDur").textContent = fmt(video.duration);
+    video.playbackRate = parseFloat($("speed").value);
+    requestAnimationFrame(resize);
+    drawMarks();
+  });
+  video.addEventListener("error", () => toast("Este vídeo no se puede reproducir aquí. Prueba con Safari o con un MP4."));
+  function showActiveCuts() {
+    const t = video.currentTime;
+    const act = visibleCuts().filter(c => t >= c.tIn && t <= c.tOut);
+    $("cutLabel").replaceChildren(...act.map(c => { const s = document.createElement("span"); s.style.setProperty("--c", CAT_COLOR[c.cat] || "#999"); s.textContent = `${c.desc} · ${c.who}`; return s; }));
+  }
+  function drawMarks() {
+    const tr = $("marksTrack"), d = video.duration;
+    if (!d || !isFinite(d)) { tr.replaceChildren(); return; }
+    tr.replaceChildren(...visibleCuts().map(c => { const i = document.createElement("i"); i.style.left = (c.tIn / d * 100) + "%"; i.style.background = CAT_COLOR[c.cat] || "#999"; i.title = c.desc; return i; }));
+  }
+  const syncTime = () => { $("seek").value = video.currentTime; $("tCur").textContent = fmt(video.currentTime); showActiveCuts(); };
+  video.addEventListener("timeupdate", syncTime);
+  video.addEventListener("seeked", syncTime);
+  const setPlayLabel = () => $("bPlay").textContent = video.paused ? "▶ Play" : "❚❚ Pausa";
+  video.addEventListener("play", setPlayLabel); video.addEventListener("pause", setPlayLabel);
+  const togglePlay = () => { if (!hasVideo) return toast("Primero carga un vídeo."); video.paused ? video.play().catch(() => {}) : video.pause(); };
+  $("bPlay").addEventListener("click", togglePlay);
+  const skip = d => { if (!hasVideo) return; video.pause(); video.currentTime = Math.min(video.duration || 0, Math.max(0, video.currentTime + d)); };
+  document.querySelectorAll("[data-skip]").forEach(b => b.addEventListener("click", () => skip(parseFloat(b.dataset.skip))));
+  $("seek").addEventListener("input", e => { video.currentTime = parseFloat(e.target.value); });
+  $("speed").addEventListener("change", e => { video.playbackRate = parseFloat(e.target.value); });
+
+  // ---------- Pizarra ----------
+  let tool = "ring", color = "#10b981", shapes = [], drawing = null;
+  const setTool = t => { tool = t; document.querySelectorAll("[data-tool]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.tool === t))); stage.classList.toggle("viewing", t === "none"); };
+  document.querySelectorAll("[data-tool]").forEach(b => b.addEventListener("click", () => setTool(b.dataset.tool)));
+  document.querySelectorAll("[data-color]").forEach(b => b.addEventListener("click", () => { color = b.dataset.color; document.querySelectorAll("[data-color]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); }));
+  function resize() { const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1; canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr); redraw(); }
+  new ResizeObserver(resize).observe(stage);
+  function drawShape(c, s, W, H, scale) {
+    c.save();
+    c.strokeStyle = s.color; c.fillStyle = s.color; c.lineWidth = 4 * scale; c.lineCap = "round"; c.lineJoin = "round";
+    const x1 = s.x1 * W, y1 = s.y1 * H, x2 = s.x2 * W, y2 = s.y2 * H;
+    if (s.type === "ring") {
+      const rx = Math.max(22 * scale, Math.hypot(x2 - x1, (y2 - y1) / 0.42) * 0.9), ry = rx * 0.42;
+      c.beginPath(); c.ellipse(x1, y1, rx, ry, 0, 0, Math.PI * 2); c.globalAlpha = 0.22; c.fill(); c.globalAlpha = 1; c.stroke();
+    } else if (s.type === "line") {
+      c.setLineDash([10 * scale, 8 * scale]); c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+    } else if (s.type === "arrow") {
+      const a = Math.atan2(y2 - y1, x2 - x1), hl = 16 * scale;
+      c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2 - Math.cos(a) * hl * 0.6, y2 - Math.sin(a) * hl * 0.6); c.stroke();
+      c.beginPath(); c.moveTo(x2, y2); c.lineTo(x2 - hl * Math.cos(a - Math.PI / 6), y2 - hl * Math.sin(a - Math.PI / 6)); c.lineTo(x2 - hl * Math.cos(a + Math.PI / 6), y2 - hl * Math.sin(a + Math.PI / 6)); c.closePath(); c.fill();
+    } else if (s.type === "free" && s.pts.length) {
+      c.beginPath(); s.pts.forEach((p, i) => i ? c.lineTo(p[0] * W, p[1] * H) : c.moveTo(p[0] * W, p[1] * H)); c.stroke();
+    }
+    c.restore();
+  }
+  function redraw() { ctx.clearRect(0, 0, canvas.width, canvas.height); const sc = window.devicePixelRatio || 1; shapes.forEach(s => drawShape(ctx, s, canvas.width, canvas.height, sc)); if (drawing) drawShape(ctx, drawing, canvas.width, canvas.height, sc); }
+  const pos = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height]; };
+  canvas.addEventListener("pointerdown", e => {
+    if (tool === "none") return;
+    e.preventDefault(); canvas.setPointerCapture(e.pointerId);
+    if (!video.paused) video.pause();
+    const [x, y] = pos(e);
+    drawing = tool === "free" ? { type: "free", color, pts: [[x, y]] } : { type: tool, color, x1: x, y1: y, x2: x, y2: y };
+    redraw();
+  });
+  canvas.addEventListener("pointermove", e => { if (!drawing) return; const [x, y] = pos(e); if (drawing.type === "free") drawing.pts.push([x, y]); else { drawing.x2 = x; drawing.y2 = y; } redraw(); });
+  const endDraw = () => { if (!drawing) return; shapes.push(drawing); drawing = null; redraw(); };
+  canvas.addEventListener("pointerup", endDraw); canvas.addEventListener("pointercancel", endDraw);
+  $("bUndo").addEventListener("click", () => { shapes.pop(); redraw(); });
+  $("bClear").addEventListener("click", () => { shapes = []; redraw(); });
+  $("bShot").addEventListener("click", () => {
+    if (!hasVideo || !video.videoWidth) return toast("Primero carga un vídeo.");
+    const W = video.videoWidth, H = video.videoHeight, t = document.createElement("canvas"); t.width = W; t.height = H;
+    const c = t.getContext("2d"); c.drawImage(video, 0, 0, W, H);
+    const scale = W / canvas.getBoundingClientRect().width; shapes.forEach(s => drawShape(c, s, W, H, scale));
+    const fs = Math.round(H * 0.026), pad = Math.round(fs * 0.6), txt = "NINO CONDE | PRODUCCIONES KARMA INVERTIDO";
+    c.font = `700 ${fs}px "Barlow Condensed", Arial, sans-serif`; const tw = c.measureText(txt).width;
+    c.fillStyle = "rgba(10,14,20,.78)"; c.fillRect(W - tw - pad * 3, H - fs - pad * 3, tw + pad * 2, fs + pad * 2);
+    c.fillStyle = "#f06a24"; c.fillRect(W - tw - pad * 3, H - fs - pad * 3, Math.max(3, fs * 0.15), fs + pad * 2);
+    c.fillStyle = "#ffffff"; c.textBaseline = "middle"; c.fillText(txt, W - tw - pad * 2, H - pad * 2 - fs / 2);
+    t.toBlob(b => { if (b) saveFile(`Pizarra_${slug($("partido").value)}_${fmt(video.currentTime).replace(/:/g, "-")}.png`, b); }, "image/png");
+  });
+
+  // ---------- Etiquetado ----------
+  let markIn = null, markOut = null;
+  const showMarks = () => { $("mIn").textContent = markIn == null ? "—" : fmt(markIn); $("mOut").textContent = markOut == null ? "—" : fmt(markOut); };
+  $("bIn").addEventListener("click", () => { if (!hasVideo) return toast("Primero carga un vídeo."); markIn = video.currentTime; if (markOut != null && markOut <= markIn) markOut = null; showMarks(); });
+  $("bOut").addEventListener("click", () => { if (!hasVideo) return toast("Primero carga un vídeo."); markOut = video.currentTime; if (markIn != null && markIn >= markOut) markIn = null; showMarks(); });
+  TAGS.forEach(g => {
+    const wrap = document.createElement("div"); wrap.className = "tag-group";
+    const h = document.createElement("h3"); h.textContent = g.group; wrap.append(h);
+    const grid = document.createElement("div"); grid.className = "tags";
+    g.items.forEach(t => { const b = document.createElement("button"); b.className = "tag"; b.style.setProperty("--c", t.c); b.textContent = t.label; b.addEventListener("click", () => addCut(t)); grid.append(b); });
+    wrap.append(grid); $("tagGroups").append(wrap);
+  });
+  function addCut(t) {
+    if (!hasVideo) return toast("Primero carga un vídeo.");
+    const cur = video.currentTime;
+    let tIn = markIn != null ? markIn : Math.max(0, cur - 6);
+    let tOut = markOut != null ? markOut : Math.min(video.duration || cur + 4, cur + 4);
+    if (tOut <= tIn) tOut = tIn + 4;
+    const cut = { id: "c" + Date.now() + Math.random().toString(36).slice(2, 6), tIn: Math.round(tIn * 100) / 100, tOut: Math.round(tOut * 100) / 100, cat: t.cat, key: t.key, desc: t.label, who: $("who").value.trim() || $("quinteto").value, partido: $("partido").value.trim() || "Sin nombre", created: Date.now() };
+    markIn = markOut = null; showMarks();
+    cuts = [cut, ...cuts]; store.set(LOCAL_KEY, cuts); render();
+    toast(`Corte guardado: ${t.label}`);
+  }
+  function removeCut(id) { cuts = cuts.filter(c => c.id !== id); store.set(LOCAL_KEY, cuts); render(); }
+
+  function render() {
+    const sel = $("filtro"), cur = sel.value;
+    const partidos = [...new Set(cuts.map(c => c.partido))].sort();
+    sel.replaceChildren(new Option("Todos los partidos", ""), ...partidos.map(p => new Option(p, p)));
+    sel.value = partidos.includes(cur) ? cur : "";
+    const list = visibleCuts(), body = $("cutsBody");
+    body.replaceChildren();
+    $("emptyCuts").hidden = list.length > 0;
+    list.forEach(c => {
+      const tr = document.createElement("tr"); tr.className = "cut"; tr.tabIndex = 0;
+      [`${fmt(c.tIn)} – ${fmt(c.tOut)}`, null, c.who, c.desc, c.partido].forEach((v, i) => {
+        const td = document.createElement("td");
+        if (i === 0) td.className = "time";
+        if (i === 1) { const s = document.createElement("span"); s.className = "chip"; s.style.setProperty("--c", CAT_COLOR[c.cat] || "var(--muted)"); s.textContent = c.cat; td.append(s); } else td.textContent = v;
+        tr.append(td);
+      });
+      const td = document.createElement("td"), del = document.createElement("button");
+      del.className = "del"; del.textContent = "Borrar";
+      del.addEventListener("click", e => { e.stopPropagation(); if (del.classList.contains("confirm")) return removeCut(c.id); del.classList.add("confirm"); del.textContent = "¿Seguro?"; setTimeout(() => { del.classList.remove("confirm"); del.textContent = "Borrar"; }, 3000); });
+      td.append(del); tr.append(td);
+      const jump = () => { if (!hasVideo) return toast("Carga el vídeo de este partido para ver el corte."); video.pause(); video.currentTime = c.tIn; stage.scrollIntoView({ block: "nearest", behavior: "smooth" }); };
+      tr.addEventListener("click", jump); tr.addEventListener("keydown", e => { if (e.key === "Enter") jump(); });
+      body.append(tr);
+    });
+    renderSummary(list);
+    if (hasVideo) { drawMarks(); showActiveCuts(); }
+  }
+  function renderSummary(list) {
+    const count = k => list.filter(c => c.key === k).length, byCat = cat => list.filter(c => c.cat === cat).length;
+    const pos = byCat("Individual +") + byCat("Invisible +"), neg = byCat("A mejorar");
+    const der = count("boteDer"), izq = count("boteIzq"), box = count("boxOk"), boxNo = count("boxNo");
+    const pct = (a, b) => a + b ? Math.round(a / (a + b) * 100) + " %" : "—";
+    const byWho = {}; list.filter(c => c.cat === "A mejorar").forEach(c => byWho[c.who] = (byWho[c.who] || 0) + 1);
+    const top = Object.entries(byWho).sort((a, b) => b[1] - a[1])[0];
+    const stats = [
+      { v: list.length, l: "Cortes etiquetados" },
+      { v: `${pos} / ${neg}`, l: "Acciones positivas / a mejorar", bar: [[pos, "var(--ok)"], [neg, "var(--bad)"]] },
+      { v: `${der} / ${izq}`, l: "Canastas tras bote derecha / izquierda", bar: [[der, "var(--off)"], [izq, "var(--accent)"]] },
+      { v: pct(box, boxNo), l: `Box out correcto (${box} de ${box + boxNo})` },
+      { v: `${byCat("Ataque")} / ${byCat("Defensa")}`, l: "Cortes de ataque / defensa", bar: [[byCat("Ataque"), "var(--off)"], [byCat("Defensa"), "var(--def)"]] },
+      { v: top ? top[0] : "—", l: top ? `Más acciones a mejorar (${top[1]})` : "Más acciones a mejorar" },
+    ];
+    $("summary").replaceChildren(...stats.map(s => {
+      const d = document.createElement("div"); d.className = "stat";
+      const b = document.createElement("b"); b.textContent = s.v; const sp = document.createElement("span"); sp.textContent = s.l; d.append(b, sp);
+      if (s.bar) { const tot = s.bar.reduce((a, x) => a + x[0], 0), bar = document.createElement("div"); bar.className = "bar"; if (tot) s.bar.forEach(([n, c]) => { const i = document.createElement("i"); i.style.width = (n / tot * 100) + "%"; i.style.background = c; bar.append(i); }); d.append(bar); }
+      return d;
+    }));
+  }
+  $("filtro").addEventListener("change", render);
+
+  // ---------- Exportar y copias ----------
+  $("bCsv").addEventListener("click", () => {
+    const list = visibleCuts(); if (!list.length) return toast("No hay cortes que exportar.");
+    const q = v => `"${String(v).replace(/"/g, '""')}"`;
+    const rows = [["Partido", "Entrada", "Salida", "Entrada (s)", "Salida (s)", "Tipo", "Jugadora/Quinteto", "Detalle"]].concat(list.map(c => [c.partido, fmt(c.tIn), fmt(c.tOut), c.tIn, c.tOut, c.cat, c.who, c.desc]));
+    saveFile(`Cortes_${slug($("filtro").value || "todos")}.csv`, "﻿" + rows.map(r => r.map(q).join(";")).join("\r\n"));
+  });
+  $("bFfmpeg").addEventListener("click", () => {
+    const list = visibleCuts(); if (!list.length) return toast("No hay cortes que exportar.");
+    let txt = "# Cortes de vídeo - Nino Conde | Producciones Karma Invertido\n# 1) Pon el vídeo del partido en la misma carpeta con el nombre partido.mp4\n# 2) Abre Terminal en esa carpeta y pega estas líneas (necesitas ffmpeg)\n\n";
+    list.forEach((c, i) => { txt += `ffmpeg -y -ss ${c.tIn.toFixed(2)} -to ${c.tOut.toFixed(2)} -i partido.mp4 -c:v libx264 -preset veryfast -crf 20 -c:a aac ${String(i + 1).padStart(2, "0")}_${slug(c.cat)}_${slug(c.who)}_${slug(c.key)}.mp4\n`; });
+    saveFile(`Cortes_ffmpeg_${slug($("filtro").value || "todos")}.txt`, txt);
+  });
+  $("bBackup").addEventListener("click", () => { if (!cuts.length) return toast("No hay cortes que guardar."); saveFile(`Copia_cortes_${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(cuts, null, 1)); });
+  $("restoreFile").addEventListener("change", async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try {
+      const data = JSON.parse(await f.text()); if (!Array.isArray(data)) throw 0;
+      const ids = new Set(cuts.map(c => c.id));
+      const nuevos = data.filter(c => c && c.id && typeof c.tIn === "number" && !ids.has(c.id));
+      cuts = [...cuts, ...nuevos]; store.set(LOCAL_KEY, cuts); render();
+      toast(`Copia cargada: ${nuevos.length} cortes nuevos.`);
+    } catch { toast("Ese archivo no es una copia de cortes válida."); }
+    e.target.value = "";
+  });
+
+  // ---------- Teclado ----------
+  document.addEventListener("keydown", e => {
+    if (e.target.matches("input, select, textarea")) return;
+    const k = e.key;
+    if (k === " ") { e.preventDefault(); togglePlay(); }
+    else if (k === "ArrowLeft") { e.preventDefault(); skip(-5); }
+    else if (k === "ArrowRight") { e.preventDefault(); skip(5); }
+    else if (k === ",") skip(-1 / 30);
+    else if (k === ".") skip(1 / 30);
+    else if (k === "i" || k === "I") $("bIn").click();
+    else if (k === "o" || k === "O") $("bOut").click();
+  });
+
+  $("partido").value = store.get("partido", "");
+  $("partido").addEventListener("change", e => store.set("partido", e.target.value));
+  render();
+})();
+</script>
+</body>
+</html>
